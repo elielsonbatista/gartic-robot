@@ -76,6 +76,10 @@ class GarticRobot
 
             client.emit(34, this.user.id, choices.indexOf(draw));
         });
+
+        client.on(34, () => {
+            client.emit(10, this.user.id, [2, 153, 113]);
+        });
     }
 
     async getServer(room) {
@@ -110,6 +114,8 @@ class GarticRobot
             name: 'room',
             message: 'Room'
         }]);
+
+        room = room.substr(2, room.length - 2);
 
         robot.joinRoom(room);
     } catch (error) {
