@@ -1,11 +1,16 @@
 const axios = require('axios');
-const socket = require('socket.io-client');
+const colorConvert = require('color-convert');
+const jimp = require('jimp');
 const inquirer = require('inquirer');
-
+const socket = require('socket.io-client');
 class GarticRobot
 {
     constructor() {
         this.user = {};
+
+        this.draw = {
+            color: 'x000000'
+        };
     }
 
     async createUser(user) {
@@ -77,8 +82,37 @@ class GarticRobot
             client.emit(34, this.user.id, choices.indexOf(draw));
         });
 
-        client.on(34, () => {
-            client.emit(10, this.user.id, [2, 153, 113]);
+        client.on(34, async () => {
+            let image = await jimp.read('./image-test.jpg');
+
+            let instance = this;
+            let { data, height, width } = image.bitmap;
+            let counter = 0;
+
+            image.scan(0, 0, width, height, function(x, y, idx) {
+                counter++;
+
+                if (counter === 5) {
+                    counter = 0;
+
+                    let red = data[idx];
+                    let green = data[idx + 1];
+                    let blue = data[idx + 2];
+
+                    let color = `x${colorConvert.rgb.hex(red, green, blue)}`;
+
+                    if (color === 'xFFFFFF') {
+                        return;
+                    }
+
+                    if (instance.draw.color !== color) {
+                        instance.draw.color = color;
+                        client.emit(10, instance.user.id, [5, color]);
+                    }
+
+                    client.emit(10, instance.user.id, [2, x, y]);
+                }
+            });
         });
     }
 
@@ -122,3 +156,31 @@ class GarticRobot
         console.log(error);
     }
 })();
+
+// This code below will be implemented to send packets of image coordinaes instead one by one.
+
+/*
+    let pixels = {};
+
+    image.scan(0, 0, width, height, function(x, y, idx) {
+        let red = data[idx];
+        let green = data[idx + 1];
+        let blue = data[idx + 2];
+
+        let color = `x${colorConvert.rgb.hex(red, green, blue)}`;
+
+        if (color === 'xFFFFFF') {
+            return;
+        }
+
+        if (! pixels[color]) {
+            pixels[color] = [[]];
+        }
+
+        if (pixels[color].length && pixels[color][pixels[color].length - 1].length < 32) {
+            pixels[color][pixels[color].length - 1].push(x, y);
+        } else {
+            pixels[color].push([x, y]);
+        }
+    });
+*/
