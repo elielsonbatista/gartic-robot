@@ -3,6 +3,7 @@ const colorConvert = require('color-convert');
 const jimp = require('jimp');
 const inquirer = require('inquirer');
 const socket = require('socket.io-client');
+
 class GarticRobot
 {
     constructor() {
@@ -80,37 +81,47 @@ class GarticRobot
             }]);
 
             client.emit(34, this.user.id, choices.indexOf(draw));
-        });
 
-        client.on(34, async () => {
-            let image = await jimp.read('./image-test.jpg');
+            client.once(34, async () => {
+                let { url } = await inquirer.prompt([{
+                    type: 'input',
+                    name: 'url',
+                    message: 'Image URL'
+                }]);
 
-            let instance = this;
-            let { data, height, width } = image.bitmap;
-            let counter = 0;
+                let image = await jimp.read(url);
 
-            image.scan(0, 0, width, height, function(x, y, idx) {
-                counter++;
-
-                if (counter === 5) {
-                    counter = 0;
-
-                    let red = data[idx];
-                    let green = data[idx + 1];
-                    let blue = data[idx + 2];
-
-                    let color = `x${colorConvert.rgb.hex(red, green, blue)}`;
-
-                    if (color === 'xFFFFFF') {
-                        return;
+                image.resize(350, 350);
+    
+                let { data, height, width } = image.bitmap;
+                let pixels = {};
+    
+                image.scan(0, 0, width, height, function(x, y, idx) {
+                    if ((x === 0 || ! (x % 4)) && (y === 0 || ! (y % 4))) {
+                        let red = data[idx];
+                        let green = data[idx + 1];
+                        let blue = data[idx + 2];
+    
+                        let color = `x${colorConvert.rgb.hex(red, green, blue)}`;
+    
+                        if (color === 'xFFFFFF') {
+                            return;
+                        }
+    
+                        if (! pixels[color]) {
+                            pixels[color] = [];
+                        }
+    
+                        pixels[color].push([x + 40, y + 40]);
                     }
-
-                    if (instance.draw.color !== color) {
-                        instance.draw.color = color;
-                        client.emit(10, instance.user.id, [5, color]);
+                });
+    
+                for (let color of Object.keys(pixels)) {
+                    client.emit(10, this.user.id, [5, color]);
+    
+                    for (let pixel of pixels[color]) {
+                        client.emit(10, this.user.id, [2, ...pixel]);
                     }
-
-                    client.emit(10, instance.user.id, [2, x, y]);
                 }
             });
         });
@@ -141,7 +152,13 @@ class GarticRobot
     let robot = new GarticRobot;
 
     try {
-        await robot.createUser();
+        let { name } = await inquirer.prompt([{
+            type: 'input',
+            name: 'name',
+            message: 'User name'
+        }]);
+
+        await robot.createUser({ name });
 
         let { room } = await inquirer.prompt([{
             type: 'input',
@@ -149,38 +166,10 @@ class GarticRobot
             message: 'Room'
         }]);
 
-        room = room.substr(2, room.length - 2);
+        room = room.replace(/.*gartic.io\//g, '').substr(2, room.length - 2);
 
         robot.joinRoom(room);
     } catch (error) {
         console.log(error);
     }
 })();
-
-// This code below will be implemented to send packets of image coordinaes instead one by one.
-
-/*
-    let pixels = {};
-
-    image.scan(0, 0, width, height, function(x, y, idx) {
-        let red = data[idx];
-        let green = data[idx + 1];
-        let blue = data[idx + 2];
-
-        let color = `x${colorConvert.rgb.hex(red, green, blue)}`;
-
-        if (color === 'xFFFFFF') {
-            return;
-        }
-
-        if (! pixels[color]) {
-            pixels[color] = [[]];
-        }
-
-        if (pixels[color].length && pixels[color][pixels[color].length - 1].length < 32) {
-            pixels[color][pixels[color].length - 1].push(x, y);
-        } else {
-            pixels[color].push([x, y]);
-        }
-    });
-*/

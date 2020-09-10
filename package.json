@@ -12,7 +12,7 @@
     "axios": "^0.20.0",
     "color-convert": "^2.0.1",
     "inquirer": "^7.3.3",
-    "jimp": "^0.16.0",
+    "jimp": "^0.16.1",
     "socket.io-client": "^2.3.0"
   },
   "devDependencies": {}
