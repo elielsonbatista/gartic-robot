@@ -49,7 +49,7 @@ class GarticRobot
             let data = {
                 avatar: this.user.avatar,
                 nick: this.user.name,
-                sala: room,
+                sala: room.substr(2, room.length - 2),
                 v: 20000
             };
             
@@ -166,7 +166,7 @@ class GarticRobot
             message: 'Room'
         }]);
 
-        room = room.replace(/.*gartic.io\//g, '').substr(2, room.length - 2);
+        room = room.replace(/.*gartic.io\//g, '');
 
         robot.joinRoom(room);
     } catch (error) {
