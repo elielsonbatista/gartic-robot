@@ -1,4 +1,4 @@
-A gartic robot drawer.
+![Demo](https://user-images.githubusercontent.com/20441393/113912032-1018d300-97b1-11eb-9bdc-c389e01b5eca.gif)
 
 ### Running the app
 
